@@ -19,6 +19,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+
 // Create Topic 
 app.MapPost("api/topics", async (AppDbContext context, Topic topic) =>
 {
@@ -29,6 +30,7 @@ app.MapPost("api/topics", async (AppDbContext context, Topic topic) =>
     return Results.Created($"api/topics/{topic.Id}", topic);
 });
 
+
 //Return all topics
 app.MapGet("api/topics", async (AppDbContext context) =>
 {
@@ -36,6 +38,7 @@ app.MapGet("api/topics", async (AppDbContext context) =>
 
     return Results.Ok(topics);
 });
+
 
 //Publish Message
 app.MapPost("api/topics/{id}/messages", async (AppDbContext context, int id, Message message) =>
@@ -64,6 +67,45 @@ app.MapPost("api/topics/{id}/messages", async (AppDbContext context, int id, Mes
     await context.SaveChangesAsync();
 
     return Results.Ok("Message has been published");
+});
+
+
+//Create Subscription
+app.MapPost("api/topics/{id}/subscriptions", async (AppDbContext context, int id, Subscription sub) =>
+{
+    bool topics = await context.Topics.AnyAsync(t => t.Id == id);
+
+    if (!topics) return Results.NotFound("Topic not found");
+
+    sub.TopicId = id;
+
+    await context.Subscriptions.AddAsync(sub);
+    await context.SaveChangesAsync();
+
+    return Results.Created($"api/topics/{id}/subscriptions/{sub.Id}", sub);
+});
+
+
+
+//Get Subscriber Messages 
+app.MapGet("api/subscriptions{id}/messages", async (AppDbContext context, int id) =>
+{
+    bool subscriptions = await context.Subscriptions.AnyAsync(s => s.Id == id);
+
+    if (!subscriptions) return Results.NotFound("Subscription not found");
+
+    var messages = context.Messages.Where(m => m.SubscriptionId == id && m.MessageStatus != "SENT");
+
+    if (messages.Count() == 0) return Results.NotFound("No new messages");
+
+    foreach (var msg in messages)
+    {
+        msg.MessageStatus = "REQUESTED";
+    }
+
+    await context.SaveChangesAsync();
+
+    return Results.Ok(messages);
 });
 
 app.Run();
