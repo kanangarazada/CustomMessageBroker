@@ -108,4 +108,31 @@ app.MapGet("api/subscriptions{id}/messages", async (AppDbContext context, int id
     return Results.Ok(messages);
 });
 
+
+// Acknowledge Messages for Subscribers
+app.MapPost("api/subscriptions/{id}/messages", async (AppDbContext context, int id, int[] confirmations) =>
+{
+    bool subscriptions = await context.Subscriptions.AnyAsync(s => s.Id == id);
+
+    if (!subscriptions) return Results.NotFound("Subscription not found");
+
+    if (confirmations.Length <= 0) return Results.BadRequest();
+
+    int count = 0;
+
+    foreach (var i in confirmations)
+    {
+        var msg = context.Messages.FirstOrDefault(m => m.Id == i);
+
+        if(msg is not null)
+        {
+            msg.MessageStatus = "SENT";
+            await context.SaveChangesAsync();
+            count++;
+        }
+    }
+
+    return Results.Ok($"Acknowledged {count}/{confirmations.Length} messages");
+});
+
 app.Run();
