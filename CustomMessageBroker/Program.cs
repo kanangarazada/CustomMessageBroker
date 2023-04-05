@@ -63,7 +63,7 @@ app.MapPost("api/topics/{id}/messages", async (AppDbContext context, int id, Mes
 
     await context.SaveChangesAsync();
 
-    return Results.Ok("Message has beed added");
+    return Results.Ok("Message has been published");
 });
 
 app.Run();
