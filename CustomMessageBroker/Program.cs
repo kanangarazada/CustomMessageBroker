@@ -88,7 +88,7 @@ app.MapPost("api/topics/{id}/subscriptions", async (AppDbContext context, int id
 
 
 //Get Subscriber Messages 
-app.MapGet("api/subscriptions{id}/messages", async (AppDbContext context, int id) =>
+app.MapGet("api/subscriptions/{id}/messages", async (AppDbContext context, int id) =>
 {
     bool subscriptions = await context.Subscriptions.AnyAsync(s => s.Id == id);
 
